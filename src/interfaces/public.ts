@@ -52,3 +52,5 @@ export interface UndoxState<S, A extends Action> {
  * 
  */
 export type Comparator<S> = (s1: S, s2: S) => boolean
+
+export type IgnoredActionsMap = object

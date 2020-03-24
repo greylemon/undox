@@ -3,6 +3,7 @@ import {
   UndoxState,
   Reducer,
   Comparator,
+  IgnoredActionsMap
 } from './public';
 
 import { UndoAction, RedoAction, GroupAction } from '../undox.action';
@@ -29,5 +30,5 @@ export interface Group {
 }
 
 export interface Delegate {
-  <S, A extends Action>(state: UndoxState<S, A>, action: A, reducer: Reducer<S, A>, comparator: Comparator<S>): UndoxState<S, A>
+  <S, A extends Action>(state: UndoxState<S, A>, action: A, reducer: Reducer<S, A>, comparator: Comparator<S>, ignoredAcionsMap: IgnoredActionsMap): UndoxState<S, A>
 }

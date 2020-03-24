@@ -120,16 +120,24 @@ const redo: Redo = (reducer, state, { payload = 1 }) => {
 }
 
 
-const delegate: Delegate = (state, action, reducer, comparator) => {
+const delegate: Delegate = (state, action, reducer, comparator, ignoredActionsMap) => {
 
   const nextPresent = reducer(state.present, action)
 
   if (comparator(state.present, nextPresent))
     return state
 
+  let history = getPastActionsWithPresent(state);
+  let index = state.index;
+
+  if (!ignoredActionsMap[action.type]) {
+    history.push(action);
+    index++;
+  }
+
   return {
-    history : [ ...getPastActionsWithPresent(state), action ],
-    index   : state.index + 1,
+    history,
+    index,
     present : nextPresent
   }
 
@@ -139,9 +147,9 @@ const delegate: Delegate = (state, action, reducer, comparator) => {
 export const undox = <S, A extends Action>(
   reducer: Reducer<S, A>,
   initAction = { type: 'undox/INIT' } as A,
-  comparator: Comparator<S> = (s1, s2) => s1 === s2
+  comparator: Comparator<S> = (s1, s2) => s1 === s2,
+  ignoredActionsMap: object = {}
   ) => {
-
   const initialState: UndoxState<S, A> = {
     history : [ initAction ],
     present : reducer(undefined, initAction),
@@ -162,7 +170,7 @@ export const undox = <S, A extends Action>(
         return group(state, action as GroupAction<A>, reducer, comparator)
 
       default:
-        return delegate(state, action as A, reducer, comparator)
+        return delegate(state, action as A, reducer, comparator, ignoredActionsMap)
 
     }
 

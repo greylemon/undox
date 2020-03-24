@@ -49,5 +49,8 @@
       "\\.(ts|tsx)$": "<rootDir>/node_modules/ts-jest/preprocessor.js"
     },
     "testRegex": "/test/.*\\.test.(ts|tsx|js)$"
+  },
+  "dependencies": {
+    "@types/node": "^12.7.4"
   }
 }
