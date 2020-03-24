@@ -40,6 +40,9 @@
     "ts-node": "^4.0.2",
     "typescript": "^2.8.1"
   },
+  "compilerOptions": {
+    "lib": ["dom", "es2015"]
+  },
   "jest": {
     "moduleFileExtensions": [
       "ts",
