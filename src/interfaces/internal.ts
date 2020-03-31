@@ -18,11 +18,11 @@ export interface CalculateState {
 }
 
 export interface Undo {
-  <S, A extends Action>(reducer: Reducer<S, A>, state: UndoxState<S, A>, action: UndoAction): UndoxState<S, A>
+  <S, A extends Action>(reducer: Reducer<S, A>, state: UndoxState<S, A>, action: UndoAction, ignoredAcionsMap: IgnoredActionsMap): UndoxState<S, A>
 }
 
 export interface Redo {
-  <S, A extends Action>(reducer: Reducer<S, A>, state: UndoxState<S, A>, action: RedoAction): UndoxState<S, A>
+  <S, A extends Action>(reducer: Reducer<S, A>, state: UndoxState<S, A>, action: RedoAction, ignoredAcionsMap: IgnoredActionsMap): UndoxState<S, A>
 }
 
 export interface Group {
@@ -30,5 +30,5 @@ export interface Group {
 }
 
 export interface Delegate {
-  <S, A extends Action>(state: UndoxState<S, A>, action: A, reducer: Reducer<S, A>, comparator: Comparator<S>, ignoredAcionsMap: IgnoredActionsMap): UndoxState<S, A>
+  <S, A extends Action>(state: UndoxState<S, A>, action: A, reducer: Reducer<S, A>, comparator: Comparator<S>): UndoxState<S, A>
 }

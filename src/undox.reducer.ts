@@ -11,7 +11,8 @@ import {
   Action,
   Reducer,
   Comparator,
-  UndoxState
+  UndoxState,
+  IgnoredActionsMap
 } from './interfaces/public';
 
 import {
@@ -89,15 +90,21 @@ const group: Group = (state, action, reducer, comparator) => {
 
 }
 
+const undo: Undo = (reducer, state, { payload = 1 }, ignoredActionsMap) => {
+  let count = 0
+  let index = state.index - 1
 
-const undo: Undo = (reducer, state, { payload = 1 }) => {
+  while (index > 0) {
+    const action = state.history[index] as Action
 
-  const nPastStatesExist = doNPastStatesExist(state, payload)
-  const index = nPastStatesExist ? state.index - payload : 0
+    if (!ignoredActionsMap[action.type] && payload === ++count) break
+    
+    index--
+  }
 
   const newState = {
     ...state,
-    index
+    index: index >= 0 ? index : 0
   }
 
   return {
@@ -107,37 +114,41 @@ const undo: Undo = (reducer, state, { payload = 1 }) => {
 
 }
 
-const redo: Redo = (reducer, state, { payload = 1 }) => {
+const redo: Redo = (reducer, state, { payload = 1 }, ignoredActionsMap) => {
+  let index = state.index + 1 < state.history.length ? state.index + 1 : state.history.length - 1
+  let count = 0
 
-  const latestFuture = state.history.slice(state.index + 1, state.index + 1 + payload)
+  while (index < state.history.length) {
+    const action = state.history[index] as Action
+
+    if (!ignoredActionsMap[action.type] && payload === ++count) break
+    
+    index++
+  }
+
+  const latestFuture = state.history.slice(
+    state.index + 1 < state.history.length ? state.index + 1 : state.history.length - 1, 
+    index < state.history.length ? index + 1 : state.history.length
+  )
 
   return {
     ...state,
-    index   : doNFutureStatesExist(state, payload) ? state.index + payload : state.history.length - 1, 
+    index: index < state.history.length ? index : state.history.length - 1,
     present : calculateState(reducer, latestFuture, getPresentState(state))
   }
 
 }
 
-
-const delegate: Delegate = (state, action, reducer, comparator, ignoredActionsMap) => {
+const delegate: Delegate = (state, action, reducer, comparator) => {
 
   const nextPresent = reducer(state.present, action)
 
   if (comparator(state.present, nextPresent))
     return state
 
-  let history = getPastActionsWithPresent(state);
-  let index = state.index;
-
-  if (!ignoredActionsMap[action.type]) {
-    history.push(action);
-    index++;
-  }
-
   return {
-    history,
-    index,
+    history : [ ...getPastActionsWithPresent(state), action ],
+    index   : state.index + 1,
     present : nextPresent
   }
 
@@ -161,16 +172,16 @@ export const undox = <S, A extends Action>(
     switch (action.type) {
 
       case UndoxTypes.UNDO:
-        return undo(reducer, state, action as UndoAction)
+        return undo(reducer, state, action as UndoAction, ignoredActionsMap)
 
       case UndoxTypes.REDO:
-        return redo(reducer, state, action as RedoAction)
+        return redo(reducer, state, action as RedoAction, ignoredActionsMap)
 
       case UndoxTypes.GROUP:
         return group(state, action as GroupAction<A>, reducer, comparator)
 
       default:
-        return delegate(state, action as A, reducer, comparator, ignoredActionsMap)
+        return delegate(state as UndoxState<S, A>, action as A, reducer, comparator)
 
     }
 
