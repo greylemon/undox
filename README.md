@@ -139,3 +139,17 @@ The third argument of `undox` is a comparator function which compares two states
 - If it evaluates to true, the action history is not updated and the state is returned.
 - If it evaluates to false, the action history is updated and the new state is returned.
 - The default comparator uses strict equality `(s1, s2) => s1 === s2`.
+
+### Additional Implementations
+
+Specified actions can be ignored. This comes with a higher cost at the moment even without an ignore list (todo)
+
+An ignoreActionsMap can be specified as the fourth parameter.
+
+Format: 
+
+{
+  [action]: true
+}
+
+
