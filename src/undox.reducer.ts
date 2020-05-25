@@ -2,9 +2,7 @@ import {
   Group,
   Undo,
   Redo,
-  Delegate,
-  CalculateState,
-  DoNStatesExist
+  Delegate
 } from './interfaces/internal';
 
 import {
@@ -25,10 +23,10 @@ import {
 
 
 // helper used to flatten the history if grouped actions are in it
-const flatten = <T> (x: (T | T[])[]) => [].concat(...x) as T[]
+const flatten = <T> (x: (T | T[])[]) => ([] as T[]).concat(...x) as T[]
 
 // actions can be an array of arrays because of grouped actions, so we flatten it first
-const calculateState: CalculateState = (reducer, actions, state) => flatten(actions).reduce(reducer, state)
+const calculateState = <S, A extends Action>(reducer: Reducer<S, A>, actions: (A | A[])[], state?: S) => flatten(actions).reduce(reducer, state) as S
 
 const getFutureActions = <S, A extends Action>(state: UndoxState<S, A>) => state.history.slice(state.index + 1)
 
@@ -68,11 +66,6 @@ export const createSelectors = <S, A extends Action>(reducer: Reducer<S, A>) => 
   }
 
 }
-
-
-const doNPastStatesExist   : DoNStatesExist = ({ history, index }, nStates) => index >= nStates
-const doNFutureStatesExist : DoNStatesExist = ({ history, index }, nStates) => history.length - 1 - index >= nStates
-
 
 const group: Group = (state, action, reducer, comparator) => {
 
@@ -134,7 +127,7 @@ const redo: Redo = (reducer, state, { payload = 1 }, ignoredActionsMap) => {
   return {
     ...state,
     index: index < state.history.length ? index : state.history.length - 1,
-    present : calculateState(reducer, latestFuture, getPresentState(state))
+    present: calculateState(reducer, latestFuture, getPresentState(state))
   }
 
 }
@@ -159,14 +152,14 @@ export const undox = <S, A extends Action>(
   reducer: Reducer<S, A>,
   initAction = { type: 'undox/INIT' } as A,
   comparator: Comparator<S> = (s1, s2) => s1 === s2,
-  ignoredActionsMap: object = {}
+  ignoredActionsMap: IgnoredActionsMap = {}
   ) => {
   const initialState: UndoxState<S, A> = {
     history : [ initAction ],
     present : reducer(undefined, initAction),
     index   : 0
   }
-
+  
   return (state = initialState, action: UndoxAction<A>) => {
 
     switch (action.type) {

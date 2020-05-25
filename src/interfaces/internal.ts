@@ -8,15 +8,6 @@ import {
 
 import { UndoAction, RedoAction, GroupAction } from '../undox.action';
 
-
-export interface DoNStatesExist {
-  <S, A extends Action>(state: UndoxState<S, A>, nStates: number): boolean
-}
-
-export interface CalculateState {
-  <S, A extends Action>(reducer: Reducer<S, A>, actions: (A | A[])[], state?: S): S
-}
-
 export interface Undo {
   <S, A extends Action>(reducer: Reducer<S, A>, state: UndoxState<S, A>, action: UndoAction, ignoredAcionsMap: IgnoredActionsMap): UndoxState<S, A>
 }
