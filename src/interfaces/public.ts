@@ -1,10 +1,3 @@
-import {
-  UndoxAction,
-  RedoAction,
-  UndoAction
-} from '../undox.action'
-
-
 /**
  * A simple Redux Action
  */

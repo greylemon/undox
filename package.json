@@ -21,6 +21,7 @@
     "test:cov": "npm test -- --coverage",
     "prepare": "npm run clean && npm run build"
   },
+  "types": "index.d.ts",
   "keywords": [
     "redux",
     "undo",

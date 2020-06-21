@@ -3,8 +3,9 @@ import {
   Undo,
   Redo,
   Delegate,
+  CalculateState,
   DoNStatesExist
-} from './interfaces/internal';
+} from '.src/interfaces/internal';
 
 import {
   Action,
@@ -12,7 +13,7 @@ import {
   Comparator,
   UndoxState,
   IgnoredActionsMap
-} from './interfaces/public';
+} from '.src/interfaces/public';
 
 import {
   UndoxTypes,
@@ -20,7 +21,81 @@ import {
   RedoAction,
   UndoAction,
   UndoxAction
-} from './undox.action';
+} from '.src/undox.action';
+
+export enum UndoxTypes {
+  UNDO  = 'undox/UNDO',
+  REDO  = 'undox/REDO',
+  GROUP = 'undox/GROUP'
+}
+
+
+/**
+ * Undo a number of actions
+ * @interface
+ * @member {number} payload - The number of steps to undo (must be positive and less than the length of the past)
+ */
+export interface UndoAction extends Action {
+  readonly type: UndoxTypes.UNDO
+  payload?: number
+}
+
+
+/**
+ * Redo a number of actions
+ * @interface
+ * @member {number} payload - The number of steps to redo (must be positive and less than the length of the future)
+ */
+export interface RedoAction extends Action {
+  readonly type: UndoxTypes.REDO
+  payload?: number
+}
+
+
+/**
+ * Group actions
+ * @interface
+ * @member {Action[]} payload - An array of actions which will be grouped into one
+ */
+export interface GroupAction<A extends Action> extends Action {
+  readonly type: UndoxTypes.GROUP
+  payload: A[]
+}
+
+/*
+ * Action Creators
+ */
+
+export const redo = (nStates = 1): RedoAction => {
+  return {
+    type    : UndoxTypes.REDO,
+    payload : nStates
+  }
+}
+
+
+export const undo = (nStates = 1): UndoAction => {
+  return {
+    type    : UndoxTypes.UNDO,
+    payload : nStates
+  }
+}
+
+
+export const group = <A extends Action>(actions: A[]): GroupAction<A> => {
+  return {
+    type    : UndoxTypes.GROUP,
+    payload : actions
+  }
+}
+
+
+export type UndoxAction<A extends Action>
+  = UndoAction
+  | RedoAction
+  | GroupAction<A>
+  | A
+
 
 
 // helper used to flatten the history if grouped actions are in it
@@ -177,4 +252,87 @@ export const undox = <S, A extends Action>(
 
   }
 
+}
+
+export interface DoNStatesExist {
+  <S, A extends Action>(state: UndoxState<S, A>, nStates: number): boolean
+}
+
+export interface CalculateState {
+  <S, A extends Action>(reducer: Reducer<S, A>, actions: (A | A[])[], state?: S): S
+}
+
+export interface Undo {
+  <S, A extends Action>(reducer: Reducer<S, A>, state: UndoxState<S, A>, action: UndoAction): UndoxState<S, A>
+}
+
+export interface Redo {
+  <S, A extends Action>(reducer: Reducer<S, A>, state: UndoxState<S, A>, action: RedoAction): UndoxState<S, A>
+}
+
+export interface Group {
+  <S, A extends Action>(state: UndoxState<S, A>, action: GroupAction<A>, reducer: Reducer<S, A>, comparator: Comparator<S>): UndoxState<S, A>
+}
+
+export interface Delegate {
+  <S, A extends Action>(state: UndoxState<S, A>, action: A, reducer: Reducer<S, A>, ignoredActionsMap: IgnoredActionsMap, comparator: Comparator<S>): UndoxState<S, A>
+}
+
+import {
+  UndoxAction,
+  RedoAction,
+  UndoAction
+} from '../undox.action'
+
+
+/**
+ * A simple Redux Action
+ */
+export interface Action<T = any> {
+  type     : T
+  payload? : any
+}
+
+/**
+ * The Reducer which is passed to the Undox Reducer.
+ * 
+ * @template S State object type.
+ * @template A Action object type.
+ * 
+ */
+export interface Reducer<S =  any, A extends Action = Action> {
+  (state: S | undefined, action: A): S
+}
+
+/**
+ * The State object type of the undox reducer
+ * 
+ * @template S State object type.
+ * @template A Action object type.
+ * 
+ * @member history An Array of Action objects that represent the history in the order: [...past, present, ...future]
+ * @member index The index which represents the present
+ * 
+ */
+export interface UndoxState<S, A extends Action> {
+  history : ReadonlyArray<(A | A[])>
+  index   : Readonly<number>
+  present : Readonly<S>
+}
+
+/**
+ * 
+ * A function which compares two states in order to detect state changes.
+ * If it evaluates to true, the action history is not updated and the state is returned.
+ * If it evaluates to false, the action history is updated and the new state is returned.
+ * The default comparator uses strict equality (s1, s2) => s1 === s2.
+ * To add every action to the history one would provide the comparatar (s1, s2) => false.
+ * 
+ * @template S State object type.
+ * 
+ */
+export type Comparator<S> = (s1: S, s2: S) => boolean
+
+export type IgnoredActionsMap = {
+  [ key: string ]: boolean
 }
